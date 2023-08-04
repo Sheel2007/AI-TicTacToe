@@ -2,20 +2,31 @@ import random
 import math
 
 class TicTacToe:
-    #this class defines the game and rules
-    def __init__(self):
-        self.board = [[' ' for _ in range(4)] for _ in range(4)]
+    def __init__(self, size=4):
+        self.size = size
+        self.board = [[' ' for _ in range(size)] for _ in range(size)]
         self.current_player = 'X'
         self.status = 'ongoing'
-        self.winning_combinations = [
-            [(0,0), (0,1), (0,2), (0,3)], [(1,0), (1,1), (1,2), (1,3)], [(2,0), (2,1), (2,2), (2,3)], [(3,0), (3,1), (3,2), (3,3)],
-            [(0,0), (1,0), (2,0), (3,0)], [(0,1), (1,1), (2,1), (3,1)], [(0,2), (1,2), (2,2), (3,2)], [(0,3), (1,3), (2,3), (3,3)],
-            [(0,0), (1,1), (2,2), (3,3)], [(0,3), (1,2), (2,1), (3,0)]
-        ]
+        self.winning_combinations = self.generate_winning_combinations()
+
+    def generate_winning_combinations(self):
+        # Generate winning combinations for rows, columns, and diagonals.
+        winning_combinations = []
+
+        # Rows and Columns
+        for i in range(self.size):
+            winning_combinations.append([(i, j) for j in range(self.size)])
+            winning_combinations.append([(j, i) for j in range(self.size)])
+
+        # Diagonals
+        winning_combinations.append([(i, i) for i in range(self.size)])
+        winning_combinations.append([(i, self.size - 1 - i) for i in range(self.size)])
+
+        return winning_combinations
 
     def print_board(self):
-        print('  1 2 3 4')
-        for i in range(4):
+        print('  ' + ' '.join(str(i) for i in range(1, self.size + 1)))
+        for i in range(self.size):
             row = self.board[i]
             print(f'{i+1} {" ".join(row)}')
 
@@ -36,7 +47,7 @@ class TicTacToe:
         for combination in self.winning_combinations:
             if all(self.board[x][y] == self.current_player for x, y in combination):
                 self.status = f'{self.current_player} wins'
-        if all(self.board[i][j] != ' ' for i in range(4) for j in range(4)) and self.status == 'ongoing':
+        if all(self.board[i][j] != ' ' for i in range(self.size) for j in range(self.size)) and self.status == 'ongoing':
             self.status = 'draw'
 
 class Node:
@@ -106,7 +117,7 @@ class MonteCarloTreeSearch:
 
     def expand(self, node):
         # takes node and creates child nodes for all possible moves from the state represented by the given node
-        possible_moves = [(x, y) for x in range(4) for y in range(4) if self.game.board[x][y] == ' ']
+        possible_moves = [(x, y) for x in range(self.game.size) for y in range(self.game.size) if self.game.board[x][y] == ' ']
         for move in possible_moves:
             node.add_child(move, self.game.current_player)
         
@@ -118,7 +129,7 @@ class MonteCarloTreeSearch:
     def simulate(self, node):
         # Simulates the game until it reaches an end state for a node.
         # Returns the result of the sim.
-        game_copy = TicTacToe()
+        game_copy = TicTacToe(self.game.size)
         game_copy.board = [row[:] for row in self.game.board]
         game_copy.current_player = self.game.current_player
         game_copy.status = self.game.status
@@ -131,7 +142,7 @@ class MonteCarloTreeSearch:
                 x, y = current_node.move
                 game_copy.make_move(x, y) #makes the "best" move
             else:
-                possible_moves = [(x, y) for x in range(4) for y in range(4) if game_copy.board[x][y] == ' ']
+                possible_moves = [(x, y) for x in range(game_copy.size) for y in range(game_copy.size) if game_copy.board[x][y] == ' ']
                 if possible_moves:
                     x, y = random.choice(possible_moves)
                     game_copy.make_move(x, y)
@@ -162,7 +173,8 @@ def get_human_move():
             print('Invalid format. Please enter row,column (e.g. 1,3).')
 
 def main():
-    game = TicTacToe()
+    size = int(input("Enter the size of the Tic-Tac-Toe grid (e.g., 4 for 4x4): "))
+    game = TicTacToe(size)
     mcts = MonteCarloTreeSearch(game)
     while game.status == 'ongoing':
         if game.current_player == 'X':
